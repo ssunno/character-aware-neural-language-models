@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
-
+# TODO : 어디에 쓰이는 코드인지 확인하고 필요없으면 지우기
 import torchfile
 import numpy as np
 

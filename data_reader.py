@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import division
 
@@ -5,9 +6,10 @@ import os
 import codecs
 import collections
 import numpy as np
+# TODO: 네이밍 제대로 바꾸기, 띄어쓰기 정리
 
 
-class Vocab:
+class Vocab:  # TODO : 왜만들었는지 확인 및 내장 dict 타입으로 변경 가능하면 변경
 
     def __init__(self, token2index=None, index2token=None):
         self._token2index = token2index or {}
@@ -50,7 +52,7 @@ class Vocab:
         return cls(token2index, index2token)
 
 
-def load_data(data_dir, max_word_length, eos='+'):
+def load_data(data_dir, max_word_length, eos='+'):  # TODO : json 읽어오도록 변경. 특수문자 + 한글 지원 추가. label(word->assignee)로 변경
 
     char_vocab = Vocab()
     char_vocab.feed(' ')  # blank is at index 0 in char vocab
@@ -103,7 +105,7 @@ def load_data(data_dir, max_word_length, eos='+'):
     print('number of tokens in test:', len(word_tokens['test']))
 
     # now we know the sizes, create tensors
-    word_tensors = {}
+    word_tensors = {}  # TODO : word_tensors feed/label 용이므로, word level로 학습하는 것이 아니기 때문에 없애야함
     char_tensors = {}
     for fname in ('train', 'valid', 'test'):
         assert len(char_tokens[fname]) == len(word_tokens[fname])
@@ -117,8 +119,8 @@ def load_data(data_dir, max_word_length, eos='+'):
     return word_vocab, char_vocab, word_tensors, char_tensors, actual_max_word_length
 
 
-class DataReader:
-
+class DataReader:  # TODO : JSON 포맷 버그리포트 읽을 수 있게 변경
+    # TODO : label(y_batches)이 다음 단어가 아니라, assignee(또는 다른 정답)이 되도록 변경
     def __init__(self, word_tensor, char_tensor, batch_size, num_unroll_steps):
 
         length = word_tensor.shape[0]
@@ -152,16 +154,3 @@ class DataReader:
 
         for x, y in zip(self._x_batches, self._y_batches):
             yield x, y
-
-
-if __name__ == '__main__':
-
-    _, _, wt, ct, _ = load_data('data', 65)
-    print(wt.keys())
-
-    count = 0
-    for x, y in DataReader(wt['valid'], ct['valid'], 20, 35).iter():
-        count += 1
-        print(x, y)
-        if count > 0:
-            break

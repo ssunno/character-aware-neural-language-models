@@ -1,14 +1,16 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import division
 
 
 import tensorflow as tf
+# TODO: 코드에 불필요한 띄어쓰기좀 없애고, 네이밍좀 제대로 바꿔야 함
 
 
 class adict(dict):
-    ''' Attribute dictionary - a convenience data structure, similar to SimpleNamespace in python 3.3
+    """ Attribute dictionary - a convenience data structure, similar to SimpleNamespace in python 3.3
         One can use attributes to read/write dictionary content.
-    '''
+    """
     def __init__(self, *av, **kav):
         dict.__init__(self, *av, **kav)
         self.__dict__ = self
@@ -237,7 +239,7 @@ def model_size():
     return size
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # TODO : remove
 
     with tf.Session() as sess:
 

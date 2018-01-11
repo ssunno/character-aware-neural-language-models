@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -9,44 +10,45 @@ import tensorflow as tf
 
 import model
 from data_reader import load_data, DataReader
+# TODO : 필요없는 코드 지우기
 
 
 flags = tf.flags
 
 # data
-flags.DEFINE_string('data_dir',    'data',   'data directory. Should contain train.txt/valid.txt/test.txt with input data')
-flags.DEFINE_string('train_dir',   'cv',     'training directory (models and summaries are saved there periodically)')
-flags.DEFINE_string('load_model',   None,    '(optional) filename of the model to load. Useful for re-starting training from a checkpoint')
+flags.DEFINE_string('data_dir', 'data', 'data directory. Should contain train.txt/valid.txt/test.txt with input data')  # TODO: DataReader 수정에 맞춰 변경
+flags.DEFINE_string('train_dir', 'cv', 'training directory (models and summaries are saved there periodically)')
+flags.DEFINE_string('load_model', None, '(optional) filename of the model to load. Useful for re-starting training from a checkpoint')
 
-# model params
-flags.DEFINE_integer('rnn_size',        650,                            'size of LSTM internal state')
-flags.DEFINE_integer('highway_layers',  2,                              'number of highway layers')
-flags.DEFINE_integer('char_embed_size', 15,                             'dimensionality of character embeddings')
-flags.DEFINE_string ('kernels',         '[1,2,3,4,5,6,7]',              'CNN kernel widths')
-flags.DEFINE_string ('kernel_features', '[50,100,150,200,200,200,200]', 'number of features in the CNN kernel')
-flags.DEFINE_integer('rnn_layers',      2,                              'number of layers in the LSTM')
-flags.DEFINE_float  ('dropout',         0.5,                            'dropout. 0 = no dropout')
+# model params  TODO: 하이퍼파라미터 최적화 실험
+flags.DEFINE_integer('rnn_size', 650, 'size of LSTM internal state')
+flags.DEFINE_integer('highway_layers', 2, 'number of highway layers')
+flags.DEFINE_integer('char_embed_size', 15, 'dimensionality of character embeddings')  # TODO: 특수문자+한글을 포함해야 함. 데이터 분석후 적절한 값을 자동으로 세팅하도록 변경
+flags.DEFINE_string('kernels', '[1,2,3,4,5,6,7]', 'CNN kernel widths')
+flags.DEFINE_string('kernel_features', '[50,100,150,200,200,200,200]', 'number of features in the CNN kernel')
+flags.DEFINE_integer('rnn_layers', 2, 'number of layers in the LSTM')
+flags.DEFINE_float('dropout', 0.5, 'dropout. 0 = no dropout')
 
-# optimization
-flags.DEFINE_float  ('learning_rate_decay', 0.5,  'learning rate decay')
-flags.DEFINE_float  ('learning_rate',       1.0,  'starting learning rate')
-flags.DEFINE_float  ('decay_when',          1.0,  'decay if validation perplexity does not improve by more than this much')
-flags.DEFINE_float  ('param_init',          0.05, 'initialize parameters at')
-flags.DEFINE_integer('num_unroll_steps',    35,   'number of timesteps to unroll for')
-flags.DEFINE_integer('batch_size',          20,   'number of sequences to train on in parallel')
-flags.DEFINE_integer('max_epochs',          25,   'number of full passes through the training data')
-flags.DEFINE_float  ('max_grad_norm',       5.0,  'normalize gradients at')
-flags.DEFINE_integer('max_word_length',     65,   'maximum word length')
+# optimization  TODO: 하이퍼파라미터 최적화 실험
+flags.DEFINE_float('learning_rate_decay', 0.5, 'learning rate decay')
+flags.DEFINE_float('learning_rate', 1.0, 'starting learning rate')
+flags.DEFINE_float('decay_when', 1.0, 'decay if validation perplexity does not improve by more than this much')
+flags.DEFINE_float('param_init', 0.05, 'initialize parameters at')
+flags.DEFINE_integer('num_unroll_steps', 35, 'number of timesteps to unroll for')
+flags.DEFINE_integer('batch_size', 20, 'number of sequences to train on in parallel')
+flags.DEFINE_integer('max_epochs', 25, 'number of full passes through the training data')
+flags.DEFINE_float('max_grad_norm', 5.0, 'normalize gradients at')
+flags.DEFINE_integer('max_word_length', 65, 'maximum word length')  # TODO : 특수문자가 많이 포함되기 때문에, word 단위가 적절한지 고민해야 함.
 
 # bookkeeping
-flags.DEFINE_integer('seed',           3435, 'random number generator seed')
-flags.DEFINE_integer('print_every',    5,    'how often to print current loss')
-flags.DEFINE_string ('EOS',            '+',  '<EOS> symbol. should be a single unused character (like +) for PTB and blank for others')
+flags.DEFINE_integer('seed', 3435, 'random number generator seed')
+flags.DEFINE_integer('print_every', 5, 'how often to print current loss')
+flags.DEFINE_string('EOS', '+', '<EOS> symbol. should be a single unused character (like +) for PTB and blank for others')  # TODO : +가 코드에 포함될 수 있으므로 EOS 심볼 변경해야함
 
 FLAGS = flags.FLAGS
 
 
-def run_test(session, m, data, batch_size, num_steps):
+def run_test(session, m, data, batch_size, num_steps):  # TODO: remove(필요없음)
     """Runs the model on the given data."""
 
     costs = 0.0
@@ -67,12 +69,12 @@ def run_test(session, m, data, batch_size, num_steps):
 
 
 def main(_):
-    ''' Trains model from data '''
+    """ Trains model from data """
 
     if not os.path.exists(FLAGS.train_dir):
         os.mkdir(FLAGS.train_dir)
         print('Created training directory', FLAGS.train_dir)
-
+    # TODO : data reader 수정에 맞춰 코드 변경
     word_vocab, char_vocab, word_tensors, char_tensors, max_word_length = \
         load_data(FLAGS.data_dir, FLAGS.max_word_length, eos=FLAGS.EOS)
 
