@@ -69,6 +69,7 @@ def main(_):
         # start training
         for current_epoch in range(FLAGS.max_epochs):
             start = time.time()
+            # training step
             for batch_x, batch_y in data_reader.batches():
                 current_step = tf.train.global_step(sess, model.global_step)
                 feed = {model.train_data: batch_x, model.targets: batch_y, model.learning_rate: FLAGS.learning_rate,
@@ -77,6 +78,18 @@ def main(_):
                 print("{}/{} ({} epochs) step, loss : {:.6f}, accuracy : {:.3f}, time/batch : {:.3f}sec"
                       .format(current_step, data_reader.num_batches * FLAGS.max_epochs, current_epoch, loss, accuracy, time.time() - start))
                 start = time.time()
+            # model test step
+            avg_loss, avg_accuracy = 0.0, 0.0
+            start = time.time()
+            for valid_x, valid_y in data_reader.valid_batches():
+                feed = {model.train_data: valid_x, model.targets: valid_y,
+                        model.dropout_keep_prob: 1.0, model.learning_rate: FLAGS.learning_rate}
+                loss, accuracy, eval_summary = sess.run([model.loss, model.accuracy], feed_dict=feed)
+                avg_accuracy += accuracy * len(valid_x)
+                avg_loss += loss * len(valid_x)
+            print("({} epochs) evaluation step, loss : {:.6f}, accuracy : {:.3f}, time/batch : {:.3f}sec"
+                  .format(current_epoch, avg_loss / len(data_reader.valid_data),
+                          avg_accuracy / len(data_reader.valid_data), time.time() - start))
 
 
 if __name__ == "__main__":

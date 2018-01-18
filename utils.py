@@ -49,8 +49,9 @@ class BatchGenerator:
         batch_x, batch_y = list(), list()
         for item in self.valid_data:
             batch_y.append(self.answer_dict[item[0]])
-            batch_x.append(np.split(np.asarray([ord(char) for char in item[1]] + [0] *
-                                               (self.sentence_limit - len(item[1])), dtype="int32"), self.max_word_length))
+            x_data = np.split(np.asarray([self.chars_dict[char] for char in item[1]] + [0] * (self.sentence_limit - len(item[1])),
+                                         dtype="int32"), self.max_word_length)
+            batch_x.append(np.transpose(x_data))
             if len(batch_x) >= self.batch_size:
                 yield batch_x, batch_y
                 batch_x.clear()
