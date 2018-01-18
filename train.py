@@ -84,7 +84,7 @@ def main(_):
             for valid_x, valid_y in data_reader.valid_batches():
                 feed = {model.train_data: valid_x, model.targets: valid_y,
                         model.dropout_keep_prob: 1.0, model.learning_rate: FLAGS.learning_rate}
-                loss, accuracy, eval_summary = sess.run([model.loss, model.accuracy], feed_dict=feed)
+                loss, accuracy = sess.run([model.loss, model.accuracy], feed_dict=feed)
                 avg_accuracy += accuracy * len(valid_x)
                 avg_loss += loss * len(valid_x)
             print("({} epochs) evaluation step, loss : {:.6f}, accuracy : {:.3f}, time/batch : {:.3f}sec"

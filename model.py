@@ -31,7 +31,7 @@ class Classifier:
 
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.targets, logits=logits, name="loss")
         self.loss = tf.reduce_mean(losses)
-        correct_prediction = tf.equal(tf.argmax(logits, 1), self.targets)
+        correct_prediction = tf.equal(tf.cast(tf.argmax(logits, 1), tf.int32), self.targets)
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
@@ -58,7 +58,7 @@ class Classifier:
         with tf.variable_scope('FC'):
             weight = tf.get_variable('weight', [FLAGS.rnn_size, FLAGS.num_classes], initializer=tf.contrib.layers.xavier_initializer())
             bias = tf.get_variable('bias', [FLAGS.num_classes], initializer=tf.contrib.layers.xavier_initializer())
-            logits = tf.nn.xw_plus_b(final_state, weight, bias)
+            logits = tf.nn.xw_plus_b(outputs[-1], weight, bias)
 
         return logits
 
