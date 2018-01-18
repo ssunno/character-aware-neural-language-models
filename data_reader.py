@@ -154,3 +154,15 @@ class DataReader:  # TODO : JSON 포맷 버그리포트 읽을 수 있게 변경
 
         for x, y in zip(self._x_batches, self._y_batches):
             yield x, y
+
+if __name__ == '__main__':
+
+    _, _, wt, ct, _ = load_data('data', 65)
+    print(wt.keys())
+
+    count = 0
+    for x, y in DataReader(wt['valid'], ct['valid'], 20, 35).iter():
+        count += 1
+        print(x, y)
+        if count > 0:
+            break

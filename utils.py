@@ -6,22 +6,24 @@ import math
 import random
 import numpy as np
 from concurrent import futures
-# TODO : data_reader 로 옮기기
-# TODO : batch_x 입력 단위에 맞춰 자르기
 
 
 class BatchGenerator:
-    def __init__(self, source_dir, batch_size, answer_key="assignee", sentence_limit=10000, num_gpus=1, num_valid=1000):
+    def __init__(self, source_dir, batch_size, max_word_length, answer_key="assignee", sentence_limit=5000, num_valid=100):
         self.source = source_dir
         self.batch_size = batch_size
         self.answer_key = answer_key
         self.sentence_limit = sentence_limit
+        self.max_word_length = max_word_length
         self.train_data, self.answer_dict = self.prepare()
+        # calculate character embed size
+        unique_chars = set()
+        for item in self.train_data:
+            unique_chars.update(item[1])
+        self.chars_dict = {i: x for x, i in enumerate(unique_chars)}
         random.shuffle(self.train_data)
         self.valid_data = self.train_data[:num_valid]
         del self.train_data[:num_valid]
-        if len(self.train_data) % num_gpus > 0:
-            del self.train_data[:len(self.train_data) % num_gpus]
         self.num_classes = len(self.answer_dict)
         self.num_batches = int(math.ceil(len(self.train_data) / self.batch_size))
         self.num_valids = int(math.ceil(len(self.valid_data) / self.batch_size))
@@ -32,7 +34,9 @@ class BatchGenerator:
         batch_x, batch_y = list(), list()
         for item in self.train_data:
             batch_y.append(self.answer_dict[item[0]])
-            batch_x.append(np.asarray([ord(char) for char in item[1]] + [0] * (self.sentence_limit - len(item[1])), dtype="int32"))
+            x_data = np.split(np.asarray([self.chars_dict[char] for char in item[1]] + [0] * (self.sentence_limit - len(item[1])),
+                                         dtype="int32"), self.max_word_length)
+            batch_x.append(np.transpose(x_data))
             if len(batch_x) >= self.batch_size:
                 yield batch_x, batch_y
                 batch_x.clear()
@@ -45,7 +49,8 @@ class BatchGenerator:
         batch_x, batch_y = list(), list()
         for item in self.valid_data:
             batch_y.append(self.answer_dict[item[0]])
-            batch_x.append(np.asarray([ord(char) for char in item[1]] + [0] * (self.sentence_limit - len(item[1])), dtype="int32"))
+            batch_x.append(np.split(np.asarray([ord(char) for char in item[1]] + [0] *
+                                               (self.sentence_limit - len(item[1])), dtype="int32"), self.max_word_length))
             if len(batch_x) >= self.batch_size:
                 yield batch_x, batch_y
                 batch_x.clear()
