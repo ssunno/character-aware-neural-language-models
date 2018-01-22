@@ -9,12 +9,13 @@ from concurrent import futures
 
 
 class BatchGenerator:
-    def __init__(self, source_dir, batch_size, max_word_length, answer_key="assignee", sentence_limit=5000, num_valid=100):
+    def __init__(self, source_dir, batch_size, max_word_length, answer_key="assignee", sentence_limit=5000, num_valid=100, threshold=0):
         self.source = source_dir
         self.batch_size = batch_size
         self.answer_key = answer_key
         self.sentence_limit = sentence_limit
         self.max_word_length = max_word_length
+        self.report_threshold = threshold
         self.train_data, self.answer_dict = self.prepare()
         # calculate character embed size
         unique_chars = set()
@@ -67,6 +68,11 @@ class BatchGenerator:
                 data, answer_set = future.result()
                 result += data
                 answers.update(answer_set)
+            report_count = {assignee: 0 for assignee in answers}
+            for item in result:
+                report_count[item[0]] += 1
+            result = [item for item in result if report_count[item[0]] > self.report_threshold]
+            answers = [assignee for assignee in answers if report_count[assignee] > self.report_threshold]
             answer_dict = dict()
             for i, answer in enumerate(answers):
                 answer_dict[answer] = i

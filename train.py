@@ -22,6 +22,7 @@ flags.DEFINE_string('load_model', None, '(optional) filename of the model to loa
 flags.DEFINE_integer('num_valid', 1000, '(optional)number of dataset.')
 
 # model params  TODO: 하이퍼파라미터 최적화 실험
+flags.DEFINE_integer('report_threshold', 10, 'remove an assignee with 10 or fewer reports')
 flags.DEFINE_integer('rnn_size', 650, 'size of LSTM internal state')
 flags.DEFINE_integer('highway_layers', 2, 'number of highway layers')
 flags.DEFINE_string('kernels', '[1,2,3,4,5,6,7]', 'CNN kernel widths')
@@ -54,7 +55,9 @@ def main(_):
         os.mkdir(FLAGS.train_dir)
         print('Created training directory', FLAGS.train_dir)
 
-    data_reader = BatchGenerator(FLAGS.data_dir, FLAGS.batch_size, FLAGS.max_word_length, sentence_limit=FLAGS.max_word_length * FLAGS.num_unroll_steps, num_valid=FLAGS.num_valid)
+    data_reader = BatchGenerator(FLAGS.data_dir, FLAGS.batch_size, FLAGS.max_word_length,
+                                 sentence_limit=FLAGS.max_word_length * FLAGS.num_unroll_steps,
+                                 num_valid=FLAGS.num_valid, threshold=FLAGS.report_threshold)
     print('initialized all dataset readers')
     FLAGS.char_vocab_size = len(data_reader.chars_dict)
     FLAGS.char_embed_size = round(FLAGS.char_vocab_size * 0.66)
