@@ -19,7 +19,7 @@ flags = tf.flags
 flags.DEFINE_string('data_dir', 'data/JDT', 'data directory. Should contain train.txt/valid.txt/test.txt with input data')  # TODO: DataReader 수정에 맞춰 변경
 flags.DEFINE_string('train_dir', 'cv', 'training directory (models and summaries are saved there periodically)')
 flags.DEFINE_string('load_model', None, '(optional) filename of the model to load. Useful for re-starting training from a checkpoint')
-flags.DEFINE_integer('num_valid', 100, '(optional)number of dataset.')
+flags.DEFINE_integer('num_valid', 1000, '(optional)number of dataset.')
 
 # model params  TODO: 하이퍼파라미터 최적화 실험
 flags.DEFINE_integer('rnn_size', 650, 'size of LSTM internal state')
@@ -31,10 +31,10 @@ flags.DEFINE_float('dropout_keep_prob', 0.5, 'dropout keep probability. 1.0 = no
 
 # optimization  TODO: 하이퍼파라미터 최적화 실험
 flags.DEFINE_float('learning_rate_decay', 0.5, 'learning rate decay')
-flags.DEFINE_float('learning_rate', 0.01, 'starting learning rate')
+flags.DEFINE_float('learning_rate', 0.001, 'starting learning rate')
 flags.DEFINE_float('decay_when', 1.0, 'decay if validation perplexity does not improve by more than this much')
 flags.DEFINE_float('param_init', 0.05, 'initialize parameters at')
-flags.DEFINE_integer('num_unroll_steps', 100, 'number of timesteps to unroll for')
+flags.DEFINE_integer('num_unroll_steps', 50, 'number of timesteps to unroll for')
 flags.DEFINE_integer('batch_size', 20, 'number of sequences to train on in parallel')
 flags.DEFINE_integer('max_epochs', 25, 'number of full passes through the training data')
 flags.DEFINE_float('max_grad_norm', 5.0, 'normalize gradients at')
