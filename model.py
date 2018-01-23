@@ -41,17 +41,14 @@ class Classifier:
 
         net = self.__tdnn(input_embedded)
         words = [tf.squeeze(x, [1]) for x in tf.split(net, FLAGS.num_unroll_steps, 1)]
-        words = [self.__highway(word, word.get_shape()[-1]) for word in words]
-        with tf.variable_scope('LSTM'):
-            cell = tf.contrib.rnn.MultiRNNCell([self.__create_rnn_cell(FLAGS.rnn_size) for _ in range(FLAGS.rnn_layers)]
-                                               , state_is_tuple=True)
-            cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout_keep_prob)
-            outputs, final_state = tf.contrib.rnn.static_rnn(cell, words, dtype=tf.float32)
-        with tf.variable_scope('FC'):
-            weight = tf.get_variable('weight', [FLAGS.rnn_size, FLAGS.num_classes], initializer=tf.contrib.layers.xavier_initializer())
-            bias = tf.get_variable('bias', [FLAGS.num_classes], initializer=tf.contrib.layers.xavier_initializer())
-            logits = tf.nn.xw_plus_b(outputs[-1], weight, bias)
-
+        words = [tf.expand_dims(self.__highway(word, word.get_shape()[-1]), 1) for word in words]
+        words = tf.expand_dims(tf.concat(words, 1), 2)
+        with tf.variable_scope('CNN'):
+            net = self.__conv2d(words, 550, [3, 1], scope='conv_0')
+            net = layers.max_pool2d(net, [3, 1], scope="max_pool_0")
+            net = self.__conv2d(net, FLAGS.num_classes, [1, 1], scope='conv_1')
+            net = layers.avg_pool2d(net, [net.get_shape()[1], 1], stride=1, scope='avg_pool_0')
+            logits = tf.squeeze(net, [1, 2])
         return logits
 
     def __create_rnn_cell(self, rnn_size):
@@ -63,7 +60,7 @@ class Classifier:
             b = tf.get_variable('b', [output_size])
         return tf.nn.conv2d(input_tensor, w, strides=[1, 1, 1, 1], padding='VALID') + b
 
-    def __conv2d(self, input_tensor, num_outputs, kernel_size, stride=1, scope=None, padding="VALID", activation_fn=tf.nn.relu, is_training=True):
+    def __conv2d(self, input_tensor, num_outputs, kernel_size, stride=1, scope=None, padding="VALID", is_training=True):
         # convolution layer with default parameter
         return layers.conv2d(input_tensor, num_outputs, kernel_size, stride=stride, scope=scope,
                              data_format="NHWC", padding=padding,
