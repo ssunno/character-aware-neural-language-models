@@ -39,6 +39,8 @@ flags.DEFINE_integer('num_unroll_steps', 50, 'number of timesteps to unroll for'
 flags.DEFINE_integer('batch_size', 20, 'number of sequences to train on in parallel')
 flags.DEFINE_integer('max_epochs', 25, 'number of full passes through the training data')
 flags.DEFINE_float('max_grad_norm', 5.0, 'normalize gradients at')
+flags.DEFINE_float('normalize_decay', 5.0, 'batch normalize decay rate')
+flags.DEFINE_float('weight_decay', 0.0002, 'L2 regularizer weight decay rate')
 flags.DEFINE_integer('max_word_length', 30, 'maximum word length')  # TODO : 특수문자가 많이 포함되기 때문에, word 단위가 적절한지 고민해야 함.
 
 # bookkeeping

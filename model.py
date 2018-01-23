@@ -4,6 +4,7 @@ from __future__ import division
 
 
 import tensorflow as tf
+import tensorflow.contrib.layers as layers
 FLAGS = tf.flags.FLAGS
 
 
@@ -14,6 +15,8 @@ class Classifier:
         self.targets = tf.placeholder(tf.int32, [None])
         self.learning_rate = tf.placeholder(tf.float32)
         self.dropout_keep_prob = tf.placeholder(tf.float32)
+        self.weight_decay = FLAGS.weight_decay
+        self.normalize_decay = FLAGS.normalize_decay
         self.kernel_list = [1, 2, 3, 4, 5, 6, 7]
         self.kernel_features = [50, 100, 150, 200, 200, 200, 200]
         # inference character-aware-neural language model
@@ -54,11 +57,19 @@ class Classifier:
     def __create_rnn_cell(self, rnn_size):
         return tf.contrib.rnn.BasicLSTMCell(rnn_size, state_is_tuple=True, forget_bias=0.0)
 
-    def __conv2d(self, input_tensor, output_size, kernel_size, scope='conv'):
+    def __conv2d_backup(self, input_tensor, output_size, kernel_size, scope='conv'):
         with tf.variable_scope(scope):
             w = tf.get_variable('w', [kernel_size[0], kernel_size[1], input_tensor.get_shape()[-1], output_size])
             b = tf.get_variable('b', [output_size])
         return tf.nn.conv2d(input_tensor, w, strides=[1, 1, 1, 1], padding='VALID') + b
+
+    def __conv2d(self, input_tensor, num_outputs, kernel_size, stride=1, scope=None, is_training=True):
+        # convolution layer with default parameter
+        return layers.conv2d(input_tensor, num_outputs, kernel_size, stride=stride, scope=scope,
+                             data_format="NHWC", padding='VALID',
+                             weights_regularizer=layers.l2_regularizer(self.weight_decay),
+                             normalizer_fn=layers.batch_norm,
+                             normalizer_params={'is_training': is_training, 'fused': True, 'decay': self.normalize_decay})
 
     def __tdnn(self, input_tensor, scope='TDNN'):
         layer_list = []
