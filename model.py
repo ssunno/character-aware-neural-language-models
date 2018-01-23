@@ -40,12 +40,12 @@ class Classifier:
         #    input_embedded = tf.reshape(input_embedded, [-1, FLAGS.max_word_length, FLAGS.char_embed_size])
 
         net = self.__tdnn(input_embedded)
-        words = self.__highway_conv2d(net, net.get_shape()[-1])
+        words = [tf.squeeze(x, [1]) for x in tf.split(net, FLAGS.num_unroll_steps, 1)]
+        words = [self.__highway(word, word.get_shape()[-1]) for word in words]
         with tf.variable_scope('LSTM'):
             cell = tf.contrib.rnn.MultiRNNCell([self.__create_rnn_cell(FLAGS.rnn_size) for _ in range(FLAGS.rnn_layers)]
                                                , state_is_tuple=True)
             cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=self.dropout_keep_prob)
-            words = [tf.squeeze(x, [1, 2]) for x in tf.split(words, FLAGS.num_unroll_steps, 1)]
             outputs, final_state = tf.contrib.rnn.static_rnn(cell, words, dtype=tf.float32)
         with tf.variable_scope('FC'):
             weight = tf.get_variable('weight', [FLAGS.rnn_size, FLAGS.num_classes], initializer=tf.contrib.layers.xavier_initializer())
@@ -63,13 +63,13 @@ class Classifier:
             b = tf.get_variable('b', [output_size])
         return tf.nn.conv2d(input_tensor, w, strides=[1, 1, 1, 1], padding='VALID') + b
 
-    def __conv2d(self, input_tensor, num_outputs, kernel_size, stride=1, scope=None, padding="VALID", activation_fn=tf.nn.relu, bias_init=0.0, is_training=True):
+    def __conv2d(self, input_tensor, num_outputs, kernel_size, stride=1, scope=None, padding="VALID", activation_fn=tf.nn.relu, is_training=True):
         # convolution layer with default parameter
         return layers.conv2d(input_tensor, num_outputs, kernel_size, stride=stride, scope=scope,
                              data_format="NHWC", padding=padding,
                              weights_regularizer=layers.l2_regularizer(self.weight_decay),
-                             normalizer_fn=layers.batch_norm, biases_initializer=tf.constant_initializer(bias_init),
-                             normalizer_params={'is_training': is_training, 'fused': True, 'decay': self.normalize_decay}, activation_fn=activation_fn)
+                             normalizer_fn=layers.batch_norm,
+                             normalizer_params={'is_training': is_training, 'fused': True, 'decay': self.normalize_decay})
 
     def __tdnn(self, input_tensor, scope='TDNN'):
         layer_list = []
@@ -77,9 +77,8 @@ class Classifier:
             for kernel, size in zip(self.kernel_list, self.kernel_features):
                 conv = self.__conv2d(input_tensor, size, [1, kernel], scope='kernel_%d' % kernel)
                 pool = tf.nn.max_pool(tf.tanh(conv), [1, 1, FLAGS.max_word_length - kernel + 1, 1], [1, 1, 1, 1], padding='VALID')
-                # layer_list.append(tf.squeeze(pool, [2]))
-                layer_list.append(pool)
-        return tf.concat(layer_list, 3) if len(layer_list) > 1 else layer_list[0]
+                layer_list.append(tf.squeeze(pool, [2]))
+        return tf.concat(layer_list, 2) if len(layer_list) > 1 else layer_list[0]
 
     def __linear(self, input_tensor, output_size, scope='linear'):
         with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
@@ -95,13 +94,3 @@ class Classifier:
                 output = tf.add(tf.multiply(g, t), tf.multiply(input_tensor, tf.subtract(1.0, t)), name='y')
                 input_tensor = output
         return output
-
-    def __highway_conv2d(self, input_tensor, size, scope='highway'):
-        with tf.variable_scope(scope):
-            for idx in range(FLAGS.highway_layers):
-                g = self.__conv2d(input_tensor, size, [1, 1], activation_fn=tf.nn.relu, padding="SAME", bias_init=-1.0, scope="activation_%d" % idx)
-                t = self.__conv2d(input_tensor, size, [1, 1], activation_fn=tf.nn.sigmoid, padding="SAME", bias_init=0.1, scope="transpose_%d" % idx)
-                c = tf.subtract(1.0, t, name=scope + "carry_%d" % idx)
-                output = tf.add(tf.multiply(g, t), tf.multiply(input_tensor, c), 'y')
-                input_tensor = output
-            return output
